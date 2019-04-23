@@ -38,18 +38,17 @@ The data for my final project be using MLB data back to 1962. I am using back to
 teams <- read.csv("Teams.csv")
 teams.subset <- subset(teams, teams$yearID >= 1962)
 teams.subset <- teams.subset[c(9,15,29)]
-X <- teams.subset[,2:3]
 kable(head(teams.subset,3), align = 'c')
 ```
 
-### Summary:
+### Summary of Data:
 ```{r, echo=FALSE, results='asis'}
 kable(summary(teams.subset))
 ```
 
 \pagebreak 
 
-### Plot of Data:
+### Plot - Correlation of Data:
 
 ```{r, echo=FALSE}
 ggpairs(teams.subset)
@@ -60,14 +59,15 @@ Overall, the data looks to have a linear relationship and is properly correlated
 
 ## *III. Method of Analysis*
 
-The model will be using R and ERA to predict W. The assumption is taken that every team will play at least 162 games, some teams may play 163 games depending on tie-breakers. The model will only be looking at MLB data, this does not include minor leagues, international leagues or international tournaments. The model will be a linear regression model. To check the validity of the model I will be looking at R2, residual plots, QQ plot, confidence intervals, dfbetas and also checking the model for multicollinearity. 
+The model will be using R and ERA to predict W. The assumption is taken that every team will play at least 162 games, some teams may play 163 games depending on tie-breakers. The model will only be looking at MLB data, this does not include minor leagues, international leagues or international tournaments. The model will be a linear regression model. To check the validity of the model I will be looking at R2, residual plots, QQ plot, confidence intervals, and also checking the model for multicollinearity.  
+
 
 ```{r}
 wins.lm <- lm(W ~ R + ERA, data = teams.subset)
 wins.lm
 ```
 
-### Equation:
+### Linear Regression Equation:
 ```{r, echo=FALSE}
 x1 <- round(wins.lm$coefficients[[1]],2)
 x2 <- round(wins.lm$coefficients[[2]],2)
@@ -91,13 +91,13 @@ R.p <- p_values[2]
 ERA.p <- p_values[3]
 ```
 
-**Runs t-value: `r toString(R.t)`, Runs p-value: `r toString(R.p)`**  
+Runs t-value: `r toString(R.t)`, Runs p-value: `r toString(R.p)`  
 
-**ERA t-value: `r toString(ERA.t)`, ERA p-value: `r toString(ERA.p)`**  
+ERA t-value: `r toString(ERA.t)`, ERA p-value: `r toString(ERA.p)`  
 
-**$R^{2}$: 87%, $R^{2}_{ADJ}$: 87%**  
+$R^{2}$: 87%, $R^{2}_{ADJ}$: 87%  
 
-**These all indicate the variables are significant and this model is strong.**  
+These all indicate the variables are significant and this model is strong.  
 
 ### ANOVA:
 ```{r, echo=FALSE}
@@ -115,7 +115,7 @@ pander(anova_table_obj, digits = 4)
 avPlots(wins.lm,marginal.scale=TRUE, ellipse=list(levels=0.5))
 ```
 
-**Both appear linear, and add value to the model.**
+Both variables are linear. Runs are positive and ERA is negative. Both variables add value to the model.
 
 ### T-Distribution % Confidence Interval
 
@@ -132,6 +132,7 @@ qqnorm(res, ylab="residuals", main = "Normal Probability Plot")
 qqline(res)
 ```
 
+The residuals are linear.
 
 ```{r, echo=FALSE}
 yhat <- wins.lm$fitted.values
@@ -139,36 +140,42 @@ plot(yhat,res, main = "Residuals vs Fitted Values")
 abline(h=0)
 ```
 
+The data might be slightly tailed to the right, but overall it looks to be distributed properly.
+
+
 ```{r, echo=FALSE}
 ols_plot_resid_lev(wins.lm)
 ```
 
-**It looks like a few data points are outliers and leveraging the model. The next step is to remove those points: 791, 798, 814, 802**
+It looks like a few data points are outliers and leveraging the model. The next step is to remove those points.
 
 ```{r}
-teams.subset <- teams.subset[-c(791, 798, 814, 802),]
-wins.lm <- lm(W ~ R + ERA, data = teams.subset)
-summary(wins.lm)
+teams.subset <- teams.subset[-c(15,968,961,457,453,462,842,928,780,791,798,814,802,911,
+                                826,760,1116,758,1115,446,449,442,462),]
+wins.lm2 <- lm(W ~ R + ERA, data = teams.subset)
+summary(wins.lm2)
 ```
 
 ### Re-run plot with points removed.
 ```{r, echo=FALSE}
-ols_plot_resid_lev(wins.lm)
+ols_plot_resid_lev(wins.lm2)
 ```
 
 ### Check for Multicollinearity
 
 ```{r, echo=FALSE}
-X <- X[-c(791, 798, 814, 802),]
+X <- teams.subset[,2:3]
 omcdiag(X,teams.subset$W)
 imcdiag(X,teams.subset$W)
 ```
 
-** No collinearity detected from either test. This model looks good to predict wins from an estimated runs total and ERA for the season. The few points we removed were unexpected, but removing them from the model appears to have strengthen it. Overall it appears that the linear model is the correct choice of a model.**
+No collinearity detected from either test.  
+
+This model looks good to predict wins from an estimated runs total and ERA for the season. The few points we removed were unexpected, but removing them from the model appears to have strengthen it. Overall it appears that the linear model is the correct choice of a model.
 
 ## *V. Conclusion*
 
-**This model looks to be reliable to predict MLB wins from projected runs scored and ERA. I would have liked to see what other variables influence the model, but ran out of time. ERA seems to have a large effect on win totals, which makes sense, the less runs you allow the more likely it is you will win. I am worried that adding more variables might overfit the model thus it will lose its accuracy.**
+This model looks to be reliable to predict MLB wins from projected runs scored and ERA. I think more variables would be good to help predict wins, but would I would worry about overfitting. Alot of baseball statistics are dependent on other statistics. ERA seems to have a large effect on win totals, which makes sense, the less runs you allow the more likely it is you will win.
 
 ## *VI. References*
 
